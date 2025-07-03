@@ -88,9 +88,6 @@ def show_login_page():
 def show_sidebar():
     """Display sidebar content based on user role with enhanced UI."""
     if st.session_state.role == "Admin":
-        # Place Refresh button at the very top of the sidebar
-        if st.sidebar.button("Refresh 🔄", key="admin_sidebar_refresh_btn"):
-            st.rerun()
         st.sidebar.markdown(f'<h2 style="color: #1e40af; text-align: center;">User Panel</h2>', unsafe_allow_html=True)
         st.sidebar.markdown(f'<h4 style="color: #1e40af; text-align: center;">Hello {st.session_state.username}</h4>', unsafe_allow_html=True)
         st.sidebar.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
@@ -209,29 +206,29 @@ def show_admin_controls():
                 else:
                     st.error("Please fill all fields")
         users = get_all_users()
-        selected_user_id = st.sidebar.selectbox("Select User to Manage", [""] + [user[1] for user in users], key="manage_user")
-        if selected_user_id:
-            user = next((u for u in users if u[1] == selected_user_id), None)
+        selected_username = st.sidebar.selectbox("Select User to Manage", [""] + [user[1] for user in users], key="manage_user")
+        if selected_username:
+            user = next((u for u in users if u[1] == selected_username), None)
             if user:
                 new_username = st.sidebar.text_input("New Username", value=user[1], key=f"new_username_{user[0]}")
                 new_password = st.sidebar.text_input("New Password", type="password", value="", key=f"new_password_{user[0]}")
                 if st.sidebar.button("Update User 📝", key=f"update_user_{user[0]}", help="Update username and/or password"):
-                    if new_username and (new_password or get_user(selected_user_id)[2]):
-                        update_user(selected_user_id, new_username, new_password if new_password else None)
-                        st.sidebar.success(f"User {selected_user_id} updated to {new_username}!")
+                    if new_username and (new_password or get_user(selected_username)[2]):
+                        update_user(selected_username, new_username, new_password if new_password else None)
+                        st.sidebar.success(f"User {selected_username} updated to {new_username}!")
                         st.rerun()
                 if st.sidebar.button("Delete User ❌", key=f"delete_user_{user[0]}", help="Delete this user"):
                     st.session_state[f"show_delete_user_confirm_{user[0]}"] = True
                 if st.session_state.get(f"show_delete_user_confirm_{user[0]}", False):
-                    st.warning(f"Are you sure you want to delete user {selected_user_id}? This action cannot be undone.")
+                    st.warning(f"Are you sure you want to delete user {selected_username}? This action cannot be undone.")
                     col1, col2 = st.columns([1,1])
                     with col1:
                         if st.button("Cancel", key=f"cancel_delete_user_{user[0]}"):
                             st.session_state[f"show_delete_user_confirm_{user[0]}"] = False
                     with col2:
                         if st.button("Delete", key=f"confirm_delete_user_{user[0]}", type="primary"):
-                            delete_user(selected_user_id)
-                            st.sidebar.success(f"User {selected_user_id} deleted!")
+                            delete_user(selected_username)
+                            st.sidebar.success(f"User {selected_username} deleted!")
                             st.session_state[f"show_delete_user_confirm_{user[0]}"] = False
                             st.rerun()
         # Bulk add users from CSV
