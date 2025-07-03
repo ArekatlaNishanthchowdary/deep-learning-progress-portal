@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from db.database import get_user_id, get_user_updates, update_update, get_edit_permission
+from db.database import get_user_id, get_user_updates, update_update
 # Add auto-refresh for admin view
 try:
     from streamlit_autorefresh import st_autorefresh
@@ -24,9 +24,6 @@ def show_user_updates():
             if updates:
                 df = pd.DataFrame(updates, columns=["Week", "Content", "Timestamp"])
                 st.dataframe(df, use_container_width=True)
-
-                # Admin can always edit
-                st.markdown("<hr>", unsafe_allow_html=True)
                 st.write("**Weekly Updates:**")
                 for week, content, timestamp in updates:
                     with st.expander(f"Week {week} (Last updated: {timestamp})", expanded=False):
