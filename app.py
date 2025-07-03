@@ -269,8 +269,6 @@ def show_main_content():
         elif page == "admin_dashboard" and st.session_state.role == "Admin":
             st.markdown(f"<h1 style='color: #1e40af; text-align: center;'>Admin Dashboard - Hello {st.session_state.username}</h1>", unsafe_allow_html=True)
             st.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
-            if st.button("Refresh 🔄", key="admin_dashboard_refresh_btn"):
-                st.rerun()
             show_admin_dashboard()
         elif page == "user_updates" and st.session_state.role == "Admin":
             show_user_updates()
