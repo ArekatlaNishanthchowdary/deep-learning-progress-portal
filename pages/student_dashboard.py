@@ -5,11 +5,10 @@ from auth.auth import logout
 
 def show_student_submission():
     """Display student dashboard for submitting or updating updates with enhanced UI."""
-    st.markdown(f"<h1 style='color: #1e40af; text-align: center;'>Student Dashboard - Hello {st.session_state.username}</h1>", unsafe_allow_html=True)
-    st.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
-
     with st.container():
         st.subheader("Submit Weekly Update 📝")
+        if st.button("Refresh 🔄", key="student_refresh_btn"):
+            st.rerun()
         user = get_user(st.session_state.username)
         user_id = user[0] if user else None
         updates = get_user_updates(user_id) if user_id else []
@@ -35,6 +34,6 @@ def show_student_submission():
                         else:
                             add_update(user_id, week, content)
                             st.success("Update submitted successfully!")
-                        st.experimental_rerun()  # Force immediate refresh
+                        st.rerun()  # Force immediate refresh
                 else:
                     st.error("Please enter update content")

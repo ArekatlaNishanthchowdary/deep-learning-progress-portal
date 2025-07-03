@@ -1,33 +1,54 @@
 import streamlit as st
 import pandas as pd
 from db.database import get_user_id, get_user_updates, update_update, get_edit_permission
+# Add auto-refresh for admin view
+try:
+    from streamlit_autorefresh import st_autorefresh
+    st_autorefresh(interval=5000, key="admin_autorefresh")
+except ImportError:
+    pass  # Add 'streamlit-autorefresh' to requirements.txt if not present
 
 def show_user_updates():
     """Display user updates for admin with edit functionality."""
-    st.subheader("User Updates 📋")
     selected_user = st.session_state.get("selected_user")
     if selected_user:
+        st.subheader(f"User Updates for {selected_user} 📋")
+        if st.button("Go to Dashboard", key="go_to_dashboard"):
+            st.session_state.page = "admin_dashboard"
+            st.rerun()
+        if st.button("Refresh 🔄", key="admin_refresh_btn"):
+            st.rerun()
         user_id = get_user_id(selected_user)
         if user_id:
             updates = get_user_updates(user_id)
-            allow_edits = get_edit_permission()
             if updates:
                 df = pd.DataFrame(updates, columns=["Week", "Content", "Timestamp"])
-                st.dataframe(df.style.set_properties(**{'background-color': '#2d3748', 'color': '#f7fafc', 'border-color': '#4a5568'}).set_table_styles([{'selector': 'tr:nth-child(even)', 'props': [('background-color', '#1a202c')]}]))
+                st.dataframe(df, use_container_width=True)
 
-                if allow_edits:
-                    selected_week = st.selectbox("Select Week to Edit", [row[0] for row in updates], key="edit_week")
-                    if selected_week:
-                        update = next((u for u in updates if u[0] == selected_week), None)
-                        if update:
-                            new_content = st.text_area("Edit Update", value=update[1], key=f"edit_content_{selected_week}", height=100)
-                            if st.button("Save Changes 💾", key=f"save_{selected_week}"):
+                # Admin can always edit
+                st.markdown("<hr>", unsafe_allow_html=True)
+                st.write("**Weekly Updates:**")
+                for week, content, timestamp in updates:
+                    with st.expander(f"Week {week} (Last updated: {timestamp})", expanded=False):
+                        edit_key = f"edit_mode_{selected_user}_{week}"
+                        if not st.session_state.get(edit_key, False):
+                            st.markdown(f"**Content:** {content}")
+                            if st.button("Edit", key=f"edit_btn_{selected_user}_{week}"):
+                                st.session_state[edit_key] = True
+                                st.rerun()
+                        else:
+                            new_content = st.text_area(f"Edit Update for Week {week}", value=content, key=f"edit_content_{selected_user}_{week}", height=100)
+                            if st.button("Save", key=f"save_{selected_user}_{week}"):
                                 if new_content:
-                                    update_update(user_id, selected_week, new_content)
-                                    st.success("Update saved successfully!")
-                                    st.experimental_rerun()
+                                    update_update(user_id, week, new_content)
+                                    st.success(f"Update for week {week} saved successfully!")
+                                    st.session_state[edit_key] = False
+                                    st.rerun()
                                 else:
                                     st.error("Content cannot be empty")
+                            if st.button("Cancel", key=f"cancel_{selected_user}_{week}"):
+                                st.session_state[edit_key] = False
+                                st.rerun()
             else:
                 st.write(f"No updates available for {selected_user}.")
         else:
