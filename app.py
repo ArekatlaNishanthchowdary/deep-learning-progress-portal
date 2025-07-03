@@ -119,6 +119,9 @@ def show_sidebar():
                         update_user(st.session_state.username, st.session_state.username, new_pw)
                         st.success("Password updated successfully!")
     elif st.session_state.role == "Admin":
+        # Add Refresh button above students list in sidebar
+        if st.sidebar.button("Refresh 🔄", key="admin_sidebar_refresh_btn"):
+            st.rerun()
         with st.sidebar.expander("Student List 🔍", expanded=True):
             search_query = st.text_input("Search Students", placeholder="Enter username...", key="admin_search_users")
             usernames = get_all_usernames()
