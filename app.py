@@ -87,11 +87,26 @@ def show_login_page():
 
 def show_sidebar():
     """Display sidebar content based on user role with enhanced UI."""
-    st.sidebar.markdown(f'<h2 style="color: #1e40af; text-align: center;">User Panel</h2>', unsafe_allow_html=True)
-    st.sidebar.markdown(f'<h4 style="color: #1e40af; text-align: center;">Hello {st.session_state.username}</h4>', unsafe_allow_html=True)
-    st.sidebar.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
-    
-    if st.session_state.role == "Student":
+    if st.session_state.role == "Admin":
+        # Place Refresh button at the very top of the sidebar
+        if st.sidebar.button("Refresh 🔄", key="admin_sidebar_refresh_btn"):
+            st.rerun()
+        st.sidebar.markdown(f'<h2 style="color: #1e40af; text-align: center;">User Panel</h2>', unsafe_allow_html=True)
+        st.sidebar.markdown(f'<h4 style="color: #1e40af; text-align: center;">Hello {st.session_state.username}</h4>', unsafe_allow_html=True)
+        st.sidebar.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
+        with st.sidebar.expander("Student List 🔍", expanded=True):
+            search_query = st.text_input("Search Students", placeholder="Enter username...", key="admin_search_users")
+            usernames = get_all_usernames()
+            usernames = sorted(usernames)  # Ensure sorted order
+            if search_query:
+                usernames = [username for username in usernames if search_query.lower() in username.lower()]
+                usernames = sorted(usernames)  # Sort after filtering
+            for username in usernames:
+                if st.sidebar.button(f"{username} 👤", key=f"sidebar_{username}", help=f"View {username}'s updates"):
+                    st.session_state.selected_user = username
+                    st.session_state.page = "user_updates"
+                    st.rerun()
+    elif st.session_state.role == "Student":
         user = get_user(st.session_state.username)
         if user:
             user_id = user[0]
@@ -118,22 +133,6 @@ def show_sidebar():
                     else:
                         update_user(st.session_state.username, st.session_state.username, new_pw)
                         st.success("Password updated successfully!")
-    elif st.session_state.role == "Admin":
-        # Add Refresh button above students list in sidebar
-        if st.sidebar.button("Refresh 🔄", key="admin_sidebar_refresh_btn"):
-            st.rerun()
-        with st.sidebar.expander("Student List 🔍", expanded=True):
-            search_query = st.text_input("Search Students", placeholder="Enter username...", key="admin_search_users")
-            usernames = get_all_usernames()
-            usernames = sorted(usernames)  # Ensure sorted order
-            if search_query:
-                usernames = [username for username in usernames if search_query.lower() in username.lower()]
-                usernames = sorted(usernames)  # Sort after filtering
-            for username in usernames:
-                if st.sidebar.button(f"{username} 👤", key=f"sidebar_{username}", help=f"View {username}'s updates"):
-                    st.session_state.selected_user = username
-                    st.session_state.page = "user_updates"
-                    st.rerun()
 
 def show_admin_controls():
     """Display admin controls in the sidebar with granular clearing options and user management."""
