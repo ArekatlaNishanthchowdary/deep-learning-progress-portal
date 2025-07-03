@@ -20,7 +20,7 @@ def init_db():
                   FOREIGN KEY(user_id) REFERENCES users(user_id))''')
     c.execute('''CREATE TABLE IF NOT EXISTS edit_permissions 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                  allow_edits INTEGER DEFAULT 0)''')  # 0 = false, 1 = true
+                  allow_edits INTEGER DEFAULT 0)''')
     c.execute("INSERT OR IGNORE INTO edit_permissions (allow_edits) VALUES (0)")
     conn.commit()
     conn.close()
@@ -56,6 +56,25 @@ def get_user(username):
     conn.close()
     return user
 
+def get_all_users():
+    """Retrieve all users with their details."""
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("SELECT user_id, username, role FROM users ORDER BY username")
+    users = c.fetchall()
+    conn.close()
+    return users
+
+def update_user(username, new_username, new_password):
+    """Update username and/or password for a user."""
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    password_hash = hash_password(new_password) if new_password else get_user(username)[2]
+    c.execute("UPDATE users SET username = ?, password_hash = ? WHERE username = ?",
+              (new_username, password_hash, username))
+    conn.commit()
+    conn.close()
+
 def reset_password(username, new_password):
     """Reset a user's password."""
     conn = sqlite3.connect('progress_portal.db')
@@ -63,6 +82,26 @@ def reset_password(username, new_password):
     c.execute("UPDATE users SET password_hash = ? WHERE username = ?", (hash_password(new_password), username))
     conn.commit()
     conn.close()
+
+def delete_user(username):
+    """Delete a user and their updates from the database."""
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    user_id = get_user_id(username)
+    if user_id:
+        c.execute("DELETE FROM updates WHERE user_id = ?", (user_id,))
+        c.execute("DELETE FROM users WHERE username = ?", (username,))
+        conn.commit()
+    conn.close()
+
+def get_user_id(username):
+    """Retrieve user_id by username."""
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("SELECT user_id FROM users WHERE username = ?", (username,))
+    user_id = c.fetchone()
+    conn.close()
+    return user_id[0] if user_id else None
 
 def add_update(user_id, week, content):
     """Add a new update for a user."""
@@ -96,7 +135,7 @@ def get_all_usernames():
     """Retrieve all usernames from the users table."""
     conn = sqlite3.connect('progress_portal.db')
     c = conn.cursor()
-    c.execute("SELECT username FROM users WHERE role = 'Student'")
+    c.execute("SELECT username FROM users WHERE role = 'Student' ORDER BY username")
     usernames = [row[0] for row in c.fetchall()]
     conn.close()
     return usernames
@@ -159,12 +198,3 @@ def update_update(user_id, week, new_content):
               (new_content, timestamp, user_id, week))
     conn.commit()
     conn.close()
-
-def get_user_id(username):
-    """Retrieve user_id by username."""
-    conn = sqlite3.connect('progress_portal.db')
-    c = conn.cursor()
-    c.execute("SELECT user_id FROM users WHERE username = ?", (username,))
-    user_id = c.fetchone()
-    conn.close()
-    return user_id[0] if user_id else None

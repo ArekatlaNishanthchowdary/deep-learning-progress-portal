@@ -5,7 +5,7 @@ from auth.auth import logout
 
 def show_student_submission():
     """Display student dashboard for submitting or updating updates with enhanced UI."""
-    st.markdown('<h1 style="color: #1e40af; text-align: center;">Student Dashboard</h1>', unsafe_allow_html=True)
+    st.markdown(f"<h1 style='color: #1e40af; text-align: center;'>Student Dashboard - Hello {st.session_state.username}</h1>", unsafe_allow_html=True)
     st.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
 
     with st.container():
@@ -16,7 +16,7 @@ def show_student_submission():
         submitted_weeks = [update[0] for update in updates]
         
         allow_edits = get_edit_permission()
-        week_options = [w for w in range(1, 11) if w not in submitted_weeks]  # Allow weeks 1-10, exclude submitted
+        week_options = [w for w in range(1, 11) if w not in submitted_weeks]
         if not week_options and not allow_edits:
             st.warning("No weeks available for submission. Contact admin to clear data or enable edits.")
         else:
@@ -35,5 +35,6 @@ def show_student_submission():
                         else:
                             add_update(user_id, week, content)
                             st.success("Update submitted successfully!")
+                        st.rerun()  # Force immediate refresh
                 else:
                     st.error("Please enter update content")

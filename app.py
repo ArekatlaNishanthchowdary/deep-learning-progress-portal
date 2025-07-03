@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from db.database import init_db, get_user_updates, get_user, get_all_usernames, get_edit_permission, set_edit_permission, clear_week_data_for_user, clear_user_data, clear_all_data, clear_week_data_for_all, get_user_id, get_all_updates
+from db.database import init_db, get_user_updates, get_user, get_all_usernames, get_edit_permission, set_edit_permission, clear_week_data_for_user, clear_user_data, clear_all_data, clear_week_data_for_all, get_user_id, get_all_updates, get_all_users, update_user, reset_password, delete_user
 from auth.auth import init_session_state, login, logout
 from pages.student_dashboard import show_student_submission
 from pages.admin_dashboard import show_admin_dashboard
@@ -56,14 +56,14 @@ def show_sidebar():
             usernames = get_all_usernames()
             if search_query:
                 usernames = [username for username in usernames if search_query.lower() in username.lower()]
-            for username in usernames:
+            for username in sorted(usernames):  # Sort alphabetically
                 if st.sidebar.button(f"{username} 👤", key=f"sidebar_{username}", help=f"View {username}'s updates"):
                     st.session_state.selected_user = username
                     st.session_state.page = "user_updates"
                     st.rerun()
 
 def show_admin_controls():
-    """Display admin controls in the sidebar with granular clearing options."""
+    """Display admin controls in the sidebar with granular clearing options and user management."""
     if st.session_state.role == "Admin":
         st.sidebar.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
         st.sidebar.subheader("Admin Controls ⚙️")
@@ -71,6 +71,7 @@ def show_admin_controls():
         if st.sidebar.button("Allow Edits to Students" if not allow_edits else "Disable Edits to Students", key="toggle_edits"):
             set_edit_permission(1 if not allow_edits else 0)
             st.sidebar.success("Edit permission updated!")
+            st.rerun()
         
         # Week-wise clear for a user
         selected_user = st.sidebar.selectbox("Select User", [""] + get_all_usernames(), key="clear_user")
@@ -83,6 +84,7 @@ def show_admin_controls():
                 if selected_week:
                     clear_week_data_for_user(user_id, selected_week)
                     st.sidebar.success(f"Week {selected_week} data cleared for {selected_user}!")
+                    st.rerun()
         
         # Clear all data for one user
         if st.sidebar.button("Clear All User Data 🧹", key="clear_user_all_data", help="Clear all data for selected user"):
@@ -90,11 +92,13 @@ def show_admin_controls():
                 user_id = get_user_id(selected_user)
                 clear_user_data(user_id)
                 st.sidebar.success(f"All data cleared for {selected_user}!")
+                st.rerun()
         
         # Clear all data for all users
         if st.sidebar.button("Clear All Data 🌐", key="clear_all_data", help="Clear all data for all users"):
             clear_all_data()
             st.sidebar.success("All data cleared for all users!")
+            st.rerun()
         
         # Clear particular week data for all users
         all_weeks = [update[1] for update in get_all_updates()] if get_all_updates() else []
@@ -103,16 +107,47 @@ def show_admin_controls():
             if selected_all_week:
                 clear_week_data_for_all(selected_all_week)
                 st.sidebar.success(f"Week {selected_all_week} data cleared for all users!")
+                st.rerun()
+        
+        # User management
+        st.sidebar.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
+        st.sidebar.subheader("User Management 👥")
+        users = get_all_users()
+        selected_user_id = st.sidebar.selectbox("Select User to Manage", [""] + [user[1] for user in users], key="manage_user")
+        if selected_user_id:
+            user = next((u for u in users if u[1] == selected_user_id), None)
+            if user:
+                new_username = st.sidebar.text_input("New Username", value=user[1], key=f"new_username_{user[0]}")
+                new_password = st.sidebar.text_input("New Password", type="password", value="", key=f"new_password_{user[0]}")
+                if st.sidebar.button("Update User 📝", key=f"update_user_{user[0]}", help="Update username and/or password"):
+                    if new_username and (new_password or get_user(selected_user_id)[2]):
+                        update_user(selected_user_id, new_username, new_password if new_password else None)
+                        st.sidebar.success(f"User {selected_user_id} updated to {new_username}!")
+                        st.rerun()
+                if st.sidebar.button("Reset Password 🔑", key=f"reset_password_{user[0]}", help="Reset password to a new value"):
+                    new_pass = st.sidebar.text_input("New Password", type="password", value="", key=f"reset_pass_{user[0]}")
+                    if new_pass:
+                        reset_password(selected_user_id, new_pass)
+                        st.sidebar.success(f"Password reset for {selected_user_id}!")
+                        st.rerun()
+                if st.sidebar.button("Delete User ❌", key=f"delete_user_{user[0]}", help="Delete this user"):
+                    delete_user(selected_user_id)
+                    st.sidebar.success(f"User {selected_user_id} deleted!")
+                    st.rerun()
 
 def show_main_content():
-    """Display main content based on page and role."""
+    """Display main content based on page and role with greeting."""
     page = st.session_state.get("page", "login")
     with st.container():
         if page == "login" or not st.session_state.logged_in:
             show_login_page()
         elif page == "student_dashboard" and st.session_state.role == "Student":
+            st.markdown(f"<h1 style='color: #1e40af; text-align: center;'>Student Dashboard - Hello {st.session_state.username}</h1>", unsafe_allow_html=True)
+            st.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
             show_student_submission()
         elif page == "admin_dashboard" and st.session_state.role == "Admin":
+            st.markdown(f"<h1 style='color: #1e40af; text-align: center;'>Admin Dashboard - Hello {st.session_state.username}</h1>", unsafe_allow_html=True)
+            st.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
             show_admin_dashboard()
         elif page == "user_updates" and st.session_state.role == "Admin":
             show_user_updates()
