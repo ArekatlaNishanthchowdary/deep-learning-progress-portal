@@ -28,15 +28,16 @@ def show_login_page():
         password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
 
         if role == "Student":
-            if st.button("Register 🎓", help="Register a new student account"):
+            if st.button("Register 🎓", key="register_button", help="Register a new student account"):
                 if re.match(r'^AIE230(0[1-9]|[1-9][0-9]|1[0-5][0-7])$', username) and len(password) >= 8:
                     if add_user(username, password, "Student"):
                         st.success(f"Student {username} registered successfully! You can now log in.")
+                        st.experimental_rerun()
                     else:
                         st.error("Username already exists or invalid format.")
                 else:
                     st.error("Username must be AIE23xxx (001-157) and password must be at least 8 characters.")
-            if st.button("Login 🚀", help="Click to log in"):
+            if st.button("Login 🚀", key="login_button_student", help="Click to log in"):
                 if login(username, password):
                     st.success("Logged in successfully!")
                     st.session_state.page = "student_dashboard"
@@ -44,7 +45,7 @@ def show_login_page():
                 else:
                     st.error("Invalid credentials")
         else:  # Admin
-            if st.button("Login 🚀", help="Click to log in"):
+            if st.button("Login 🚀", key="login_button_admin", help="Click to log in"):
                 if login(username, password):
                     st.success("Logged in successfully!")
                     st.session_state.page = "admin_dashboard"
