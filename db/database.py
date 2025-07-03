@@ -118,6 +118,14 @@ def set_edit_permission(allow_edits):
     conn.commit()
     conn.close()
 
+def clear_week_data_for_user(user_id, week):
+    """Clear updates for a specific week for a user."""
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM updates WHERE user_id = ? AND week = ?", (user_id, week))
+    conn.commit()
+    conn.close()
+
 def clear_user_data(user_id):
     """Clear all updates for a specific user."""
     conn = sqlite3.connect('progress_portal.db')
@@ -131,6 +139,14 @@ def clear_all_data():
     conn = sqlite3.connect('progress_portal.db')
     c = conn.cursor()
     c.execute("DELETE FROM updates")
+    conn.commit()
+    conn.close()
+
+def clear_week_data_for_all(week):
+    """Clear updates for a specific week across all users."""
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM updates WHERE week = ?", (week,))
     conn.commit()
     conn.close()
 
