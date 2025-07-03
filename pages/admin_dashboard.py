@@ -6,8 +6,6 @@ def show_admin_dashboard():
     """Display admin dashboard with enhanced UI."""
     with st.container():
         st.subheader("Admin Statistics 📊")
-        if st.button("Refresh 🔄", key="admin_dashboard_refresh_btn"):
-            st.rerun()
         from db.database import get_all_users
         users = get_all_users()
         total_users = len(users)
