@@ -1,13 +1,14 @@
 import streamlit as st
 import pandas as pd
-from db.database import init_db, get_user_updates, get_user, get_all_usernames, get_edit_permission, set_edit_permission, clear_week_data_for_user, clear_user_data, clear_all_data, clear_week_data_for_all, get_user_id, get_all_updates, get_all_users, update_user, reset_password, delete_user
+from db.database import init_db, get_user_updates, get_user, get_all_usernames, get_edit_permission, set_edit_permission, clear_week_data_for_user, clear_user_data, clear_all_data, clear_week_data_for_all, get_user_id, get_all_updates, get_all_users, add_user, update_user, reset_password, delete_user
 from auth.auth import init_session_state, login, logout
 from pages.student_dashboard import show_student_submission
 from pages.admin_dashboard import show_admin_dashboard
 from pages.user_updates import show_user_updates
+import re
 
 def show_login_page():
-    """Display the login page with enhanced UI."""
+    """Display the login page with enhanced UI and registration option for students."""
     st.markdown("""
         <style>
         .title { font-size: 3em; color: #1e40af; text-align: center; margin-bottom: 20px; font-weight: bold; }
@@ -25,13 +26,31 @@ def show_login_page():
         role = st.selectbox("Role", ["Student", "Admin"], key="login_role")
         username = st.text_input("Username", placeholder="Enter your username", key="login_username")
         password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
-        if st.button("Login 🚀", help="Click to log in"):
-            if login(username, password):
-                st.success("Logged in successfully!")
-                st.session_state.page = "student_dashboard" if role == "Student" else "admin_dashboard"
-                st.rerun()
-            else:
-                st.error("Invalid credentials")
+
+        if role == "Student":
+            if st.button("Register 🎓", help="Register a new student account"):
+                if re.match(r'^AIE230(0[1-9]|[1-9][0-9]|1[0-5][0-7])$', username) and len(password) >= 8:
+                    if add_user(username, password, "Student"):
+                        st.success(f"Student {username} registered successfully! You can now log in.")
+                    else:
+                        st.error("Username already exists or invalid format.")
+                else:
+                    st.error("Username must be AIE23xxx (001-157) and password must be at least 8 characters.")
+            if st.button("Login 🚀", help="Click to log in"):
+                if login(username, password):
+                    st.success("Logged in successfully!")
+                    st.session_state.page = "student_dashboard"
+                    st.experimental_rerun()
+                else:
+                    st.error("Invalid credentials")
+        else:  # Admin
+            if st.button("Login 🚀", help="Click to log in"):
+                if login(username, password):
+                    st.success("Logged in successfully!")
+                    st.session_state.page = "admin_dashboard"
+                    st.experimental_rerun()
+                else:
+                    st.error("Invalid credentials")
         st.markdown('</div>', unsafe_allow_html=True)
 
 def show_sidebar():
@@ -60,7 +79,7 @@ def show_sidebar():
                 if st.sidebar.button(f"{username} 👤", key=f"sidebar_{username}", help=f"View {username}'s updates"):
                     st.session_state.selected_user = username
                     st.session_state.page = "user_updates"
-                    st.rerun()
+                    st.experimental_rerun()
 
 def show_admin_controls():
     """Display admin controls in the sidebar with granular clearing options and user management."""
@@ -71,7 +90,7 @@ def show_admin_controls():
         if st.sidebar.button("Allow Edits to Students" if not allow_edits else "Disable Edits to Students", key="toggle_edits"):
             set_edit_permission(1 if not allow_edits else 0)
             st.sidebar.success("Edit permission updated!")
-            st.rerun()
+            st.experimental_rerun()
         
         # Week-wise clear for a user
         selected_user = st.sidebar.selectbox("Select User", [""] + get_all_usernames(), key="clear_user")
@@ -84,7 +103,7 @@ def show_admin_controls():
                 if selected_week:
                     clear_week_data_for_user(user_id, selected_week)
                     st.sidebar.success(f"Week {selected_week} data cleared for {selected_user}!")
-                    st.rerun()
+                    st.experimental_rerun()
         
         # Clear all data for one user
         if st.sidebar.button("Clear All User Data 🧹", key="clear_user_all_data", help="Clear all data for selected user"):
@@ -92,13 +111,13 @@ def show_admin_controls():
                 user_id = get_user_id(selected_user)
                 clear_user_data(user_id)
                 st.sidebar.success(f"All data cleared for {selected_user}!")
-                st.rerun()
+                st.experimental_rerun()
         
         # Clear all data for all users
         if st.sidebar.button("Clear All Data 🌐", key="clear_all_data", help="Clear all data for all users"):
             clear_all_data()
             st.sidebar.success("All data cleared for all users!")
-            st.rerun()
+            st.experimental_rerun()
         
         # Clear particular week data for all users
         all_weeks = [update[1] for update in get_all_updates()] if get_all_updates() else []
@@ -107,7 +126,7 @@ def show_admin_controls():
             if selected_all_week:
                 clear_week_data_for_all(selected_all_week)
                 st.sidebar.success(f"Week {selected_all_week} data cleared for all users!")
-                st.rerun()
+                st.experimental_rerun()
         
         # User management
         st.sidebar.markdown('<hr style="border: 1px solid #4a5568;">', unsafe_allow_html=True)
@@ -123,17 +142,17 @@ def show_admin_controls():
                     if new_username and (new_password or get_user(selected_user_id)[2]):
                         update_user(selected_user_id, new_username, new_password if new_password else None)
                         st.sidebar.success(f"User {selected_user_id} updated to {new_username}!")
-                        st.rerun()
+                        st.experimental_rerun()
                 if st.sidebar.button("Reset Password 🔑", key=f"reset_password_{user[0]}", help="Reset password to a new value"):
                     new_pass = st.sidebar.text_input("New Password", type="password", value="", key=f"reset_pass_{user[0]}")
                     if new_pass:
                         reset_password(selected_user_id, new_pass)
                         st.sidebar.success(f"Password reset for {selected_user_id}!")
-                        st.rerun()
+                        st.experimental_rerun()
                 if st.sidebar.button("Delete User ❌", key=f"delete_user_{user[0]}", help="Delete this user"):
                     delete_user(selected_user_id)
                     st.sidebar.success(f"User {selected_user_id} deleted!")
-                    st.rerun()
+                    st.experimental_rerun()
 
 def show_main_content():
     """Display main content based on page and role with greeting."""
@@ -164,7 +183,7 @@ def main():
     if st.session_state.logged_in and st.sidebar.button("Logout 🚪", help="Click to log out"):
         logout()
         st.session_state.page = "login"
-        st.rerun()
+        st.experimental_rerun()
 
 if __name__ == "__main__":
     main()

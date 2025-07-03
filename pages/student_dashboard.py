@@ -35,6 +35,6 @@ def show_student_submission():
                         else:
                             add_update(user_id, week, content)
                             st.success("Update submitted successfully!")
-                        st.rerun()  # Force immediate refresh
+                        st.experimental_rerun()  # Force immediate refresh
                 else:
                     st.error("Please enter update content")

@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
 import bcrypt
+import re
 
 def init_db():
     """Initialize SQLite database with users, updates, and edit permissions tables."""
@@ -34,7 +35,9 @@ def verify_password(password, hashed):
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 def add_user(username, password, role):
-    """Add a new user to the database."""
+    """Add a new user to the database with validation."""
+    if role == "Student" and not (re.match(r'^AIE230(0[1-9]|[1-9][0-9]|1[0-5][0-7])$', username) and len(password) >= 8):
+        return False
     conn = sqlite3.connect('progress_portal.db')
     c = conn.cursor()
     try:
