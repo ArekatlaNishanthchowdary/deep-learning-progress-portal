@@ -13,7 +13,16 @@ def show_messenger():
         st.warning("You must be logged in to access Messenger.")
         st.session_state.page = "login"
         st.stop()
-
+    # --- Go to Dashboard button ---
+    current_role = st.session_state.get("role")
+    if current_role == "Admin":
+        if st.button("Go to Dashboard", key="go_to_admin_dashboard"):
+            st.session_state.page = "admin_dashboard"
+            st.rerun()
+    elif current_role == "Student":
+        if st.button("Go to Dashboard", key="go_to_student_dashboard"):
+            st.session_state.page = "student_dashboard"
+            st.rerun()
     st.title("Messenger 📨")
 
     # --- Tab persistence ---
