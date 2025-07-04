@@ -20,13 +20,21 @@ def show_messenger():
         st.session_state.page = "messenger"
         st.rerun()
 
-    tabs = st.tabs(["Group Chat", "Personal Chat", "Personal Chat (Admins)"])
+    # --- Tab persistence ---
+    tab_labels = ["Group Chat", "Personal Chat", "Personal Chat (Admins)"]
+    if "messenger_tab" not in st.session_state:
+        st.session_state["messenger_tab"] = 0
+    def set_tab(idx):
+        st.session_state["messenger_tab"] = idx
+    tabs = st.tabs(tab_labels)
 
     # --- Group Chat Tab ---
     with tabs[0]:
+        if st.button("Refresh 🔄", key="group_refresh_btn"):
+            set_tab(0)
+            st.rerun()
         st.subheader("Group Chat")
         st.caption("All users can chat here. Admin can edit any message. Students can edit/delete their own.")
-        st.button("Refresh 🔄", key="group_refresh_btn", on_click=st.rerun)
         messages = get_group_messages()
         current_user = st.session_state.get("username")
         current_role = st.session_state.get("role")
@@ -89,9 +97,11 @@ def show_messenger():
 
     # --- Personal Chat (Student-to-Student) Tab ---
     with tabs[1]:
+        if st.button("Refresh 🔄", key="student_private_refresh_btn"):
+            set_tab(1)
+            st.rerun()
         st.subheader("Personal Chat (Student-to-Student)")
         st.caption("Students can chat privately with other students.")
-        st.button("Refresh 🔄", key="student_private_refresh_btn", on_click=st.rerun)
         current_user = st.session_state.get("username")
         current_role = st.session_state.get("role")
         all_users = get_all_users() if 'get_all_users' in globals() or 'get_all_users' in locals() else []
@@ -154,9 +164,11 @@ def show_messenger():
 
     # --- Personal Chat (Admins) Tab ---
     with tabs[2]:
+        if st.button("Refresh 🔄", key="admin_private_refresh_btn"):
+            set_tab(2)
+            st.rerun()
         st.subheader("Personal Chat (Admins)")
         st.caption("Students can chat with admins. Admins can chat with students.")
-        st.button("Refresh 🔄", key="admin_private_refresh_btn", on_click=st.rerun)
         current_user = st.session_state.get("username")
         current_role = st.session_state.get("role")
         all_users = get_all_users() if 'get_all_users' in globals() or 'get_all_users' in locals() else []
