@@ -1,6 +1,3 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
 from db.database import (
     get_group_messages, add_group_message, edit_group_message, delete_group_message,
