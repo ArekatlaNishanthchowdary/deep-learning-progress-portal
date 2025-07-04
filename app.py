@@ -5,6 +5,7 @@ from auth.auth import init_session_state, login, logout
 from pages.student_dashboard import show_student_submission
 from pages.admin_dashboard import show_admin_dashboard
 from pages.user_updates import show_user_updates
+from pages.messenger import show_messenger
 import re
 
 def apply_theme():
@@ -275,6 +276,8 @@ def show_main_content():
             show_admin_dashboard()
         elif page == "user_updates" and st.session_state.role == "Admin":
             show_user_updates()
+        elif page == "messenger":
+            show_messenger()
 
 def main():
     """Main Streamlit app function."""
