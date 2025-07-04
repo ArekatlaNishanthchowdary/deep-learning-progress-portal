@@ -87,6 +87,10 @@ def show_login_page():
 
 def show_sidebar():
     """Display sidebar content based on user role with enhanced UI."""
+    if st.session_state.get("logged_in", False):
+        if st.sidebar.button("Messenger 📨", key="sidebar_messenger_main"):
+            st.session_state.page = "messenger"
+            st.rerun()
     if st.session_state.role == "Admin":
         st.sidebar.markdown(f'<h2 style="color: #1e40af; text-align: center;">User Panel</h2>', unsafe_allow_html=True)
         st.sidebar.markdown(f'<h4 style="color: #1e40af; text-align: center;">Hello {st.session_state.username}</h4>', unsafe_allow_html=True)
@@ -130,7 +134,7 @@ def show_sidebar():
                     else:
                         update_user(st.session_state.username, st.session_state.username, new_pw)
                         st.success("Password updated successfully!")
-
+#workin
 def show_admin_controls():
     """Display admin controls in the sidebar with granular clearing options and user management."""
     if st.session_state.role == "Admin":

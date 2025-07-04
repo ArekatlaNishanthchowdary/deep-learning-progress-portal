@@ -15,10 +15,6 @@ def show_messenger():
         st.stop()
 
     st.title("Messenger 📨")
-    # --- Add Messenger to sidebar ---
-    if st.sidebar.button("Messenger 📨", key="sidebar_messenger"):
-        st.session_state.page = "messenger"
-        st.rerun()
 
     # --- Tab persistence ---
     tab_labels = ["Group Chat", "Personal Chat", "Personal Chat (Admins)"]
