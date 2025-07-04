@@ -23,6 +23,22 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                   allow_edits INTEGER DEFAULT 0)''')
     c.execute("INSERT OR IGNORE INTO edit_permissions (allow_edits) VALUES (0)")
+    # Messenger tables
+    c.execute('''CREATE TABLE IF NOT EXISTS group_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender TEXT,
+        content TEXT,
+        timestamp TEXT,
+        edited INTEGER DEFAULT 0
+    )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS private_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender TEXT,
+        receiver TEXT,
+        content TEXT,
+        timestamp TEXT,
+        edited INTEGER DEFAULT 0
+    )''')
     conn.commit()
     conn.close()
 
@@ -199,5 +215,87 @@ def update_update(user_id, week, new_content):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute("UPDATE updates SET content = ?, timestamp = ? WHERE user_id = ? AND week = ?",
               (new_content, timestamp, user_id, week))
+    conn.commit()
+    conn.close()
+
+# --- Group Chat Functions ---
+def add_group_message(sender, content):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("INSERT INTO group_messages (sender, content, timestamp) VALUES (?, ?, ?)", (sender, content, timestamp))
+    conn.commit()
+    conn.close()
+
+def get_group_messages():
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("SELECT id, sender, content, timestamp, edited FROM group_messages ORDER BY id ASC")
+    messages = c.fetchall()
+    conn.close()
+    return messages
+
+def edit_group_message(msg_id, new_content):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("UPDATE group_messages SET content = ?, timestamp = ?, edited = 1 WHERE id = ?", (new_content, timestamp, msg_id))
+    conn.commit()
+    conn.close()
+
+def delete_group_message(msg_id):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM group_messages WHERE id = ?", (msg_id,))
+    conn.commit()
+    conn.close()
+
+def delete_all_group_messages():
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM group_messages")
+    conn.commit()
+    conn.close()
+
+# --- Private Chat Functions ---
+def add_private_message(sender, receiver, content):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("INSERT INTO private_messages (sender, receiver, content, timestamp) VALUES (?, ?, ?, ?)", (sender, receiver, content, timestamp))
+    conn.commit()
+    conn.close()
+
+def get_private_messages(user1, user2):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("""
+        SELECT id, sender, receiver, content, timestamp, edited FROM private_messages
+        WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)
+        ORDER BY id ASC
+    """, (user1, user2, user2, user1))
+    messages = c.fetchall()
+    conn.close()
+    return messages
+
+def edit_private_message(msg_id, new_content):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("UPDATE private_messages SET content = ?, timestamp = ?, edited = 1 WHERE id = ?", (new_content, timestamp, msg_id))
+    conn.commit()
+    conn.close()
+
+def delete_private_message(msg_id):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM private_messages WHERE id = ?", (msg_id,))
+    conn.commit()
+    conn.close()
+
+def delete_all_private_messages_between(user1, user2):
+    conn = sqlite3.connect('progress_portal.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM private_messages WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)", (user1, user2, user2, user1))
     conn.commit()
     conn.close()
